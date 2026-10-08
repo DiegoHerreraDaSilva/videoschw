@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Schwaben</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; cursor: none; }
+  video { width: 100vw; height: 100vh; object-fit: contain; display: block; background: #000; }
+</style>
+</head>
+<body>
+<video id="v" autoplay muted loop playsinline></video>
+
+<script>
+  // ====== CONFIG ======
+  const VIDEO_FILE = "video.mp4";        // troque o arquivo todo mês (mesmo nome)
+  const RELOAD_MINUTOS = 30;             // recarrega a página para pegar vídeo novo
+  // ====================
+
+  const v = document.getElementById("v");
+
+  function carregar() {
+    v.src = VIDEO_FILE + "?v=" + Date.now(); // evita cache do vídeo antigo
+    v.play().catch(() => {});
+  }
+
+  // Recupera de erros / travamentos
+  v.addEventListener("error", () => setTimeout(carregar, 5000));
+  v.addEventListener("stalled", () => setTimeout(() => v.play().catch(() => {}), 3000));
+  v.addEventListener("ended", () => { v.currentTime = 0; v.play(); });
+
+  // Recarrega periodicamente (pega vídeo novo e limpa memória)
+  setTimeout(() => location.reload(), RELOAD_MINUTOS * 60 * 1000);
+
+  // Tela cheia: o navegador exige um clique/tecla (ou use modo kiosk)
+  function tela_cheia() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  }
+  document.addEventListener("click", tela_cheia);
+  document.addEventListener("keydown", tela_cheia);
+
+  // Impede a TV de apagar a tela
+  async function manterAcordada() {
+    try { await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+  manterAcordada();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") manterAcordada();
+  });
+
+  carregar();
+</script>
+</body>
+</html>
